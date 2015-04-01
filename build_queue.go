@@ -5,12 +5,15 @@ import (
 	"log"
 	"os"
 
+	"code.google.com/p/go-uuid/uuid"
+	"github.com/bmorton/builder/streams"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/fsouza/go-dockerclient"
 	"gopkg.in/libgit2/git2go.v22"
 )
 
 type Build struct {
+	JobID          string
 	RepositoryName string
 	CloneURL       string
 	CommitID       string
@@ -20,22 +23,40 @@ type Build struct {
 type BuildQueue struct {
 	queue        chan *Build
 	dockerClient *docker.Client
+	jobs         *JobRepository
 }
 
-func (bq *BuildQueue) Add(build *Build) {
+func NewBuildQueue(repo *JobRepository, dockerClient *docker.Client) *BuildQueue {
+	return &BuildQueue{
+		queue:        make(chan *Build, 100),
+		dockerClient: dockerClient,
+		jobs:         repo,
+	}
+}
+
+func (bq *BuildQueue) Add(build *Build) string {
+	build.JobID = uuid.New()
 	bq.queue <- build
-	return
+	return build.JobID
 }
 
 func (bq *BuildQueue) Run() {
 	for {
 		log.Println("Waiting for builds...")
 		build := <-bq.queue
-		log.Println("Starting build...")
+
+		log.Printf("[%s] Starting job...\n", build.JobID)
+		writer := streams.NewOutput()
+		bq.jobs.Save(build.JobID, writer)
+
+		log.Printf("[%s] Building image...\n", build.JobID)
 		bq.buildImage(build)
-		log.Println("Pushing image...")
+		log.Printf("[%s] Pushing image...\n", build.JobID)
 		bq.pushImage(build)
-		log.Println("Build complete!")
+		log.Printf("[%s] Build complete!", build.JobID)
+
+		writer.Close()
+		bq.jobs.Destroy(build.JobID)
 	}
 }
 
@@ -65,21 +86,22 @@ func (bq *BuildQueue) buildImage(build *Build) {
 		IncludeFiles:    []string{"."},
 	}
 	context, err := archive.TarWithOptions(repoPath, options)
-
+	stream, _ := bq.jobs.Find(build.JobID)
 	err = bq.dockerClient.BuildImage(docker.BuildImageOptions{
 		Dockerfile:   "Dockerfile",
-		Name:         fmt.Sprintf("%s/%s:%s", "192.168.59.103:5000", build.RepositoryName, build.CommitID[:6]),
-		OutputStream: os.Stdout,
+		Name:         fmt.Sprintf("%s/%s:%s", "192.168.59.103:5000", build.RepositoryName, build.CommitID[:7]),
+		OutputStream: stream,
 		InputStream:  context,
 	})
 	handleError(err)
 }
 
 func (bq *BuildQueue) pushImage(build *Build) {
+	stream, _ := bq.jobs.Find(build.JobID)
 	err := bq.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", "192.168.59.103:5000", build.RepositoryName),
-		Tag:          build.CommitID[:6],
-		OutputStream: os.Stdout,
+		Tag:          build.CommitID[:7],
+		OutputStream: stream,
 	}, docker.AuthConfiguration{})
 	handleError(err)
 }

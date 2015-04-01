@@ -5,13 +5,10 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"net/url"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/rcrowley/go-tigertonic"
 )
-
-type RootHandler struct{}
 
 func main() {
 	mux := tigertonic.NewTrieServeMux()
@@ -21,15 +18,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	buildQueue := &BuildQueue{dockerClient: client, queue: make(chan *Build, 100)}
-	go buildQueue.Run()
+
+	repo := NewJobRepository()
+	buildQueue := NewBuildQueue(repo, client)
 	githubHandler := &GithubHandler{queue: buildQueue}
-	mux.Handle("POST", "/webhooks/github", tigertonic.Marshaled(githubHandler.Webhook))
+	mux.Handle("POST", "/webhooks/github", tigertonic.ApacheLogged(tigertonic.Marshaled(githubHandler.Webhook)))
+	buildsResource := &BuildsResource{builds: repo}
+	mux.Handle("GET", "/builds/{id}", http.HandlerFunc(buildsResource.Show))
 
-	server := tigertonic.NewServer(":3000", tigertonic.ApacheLogged(mux))
+	go buildQueue.Run()
+
+	server := tigertonic.NewServer(":3000", mux)
 	server.ListenAndServe()
-}
-
-func (r *RootHandler) Index(u *url.URL, h http.Header, req interface{}) (int, http.Header, interface{}, error) {
-	return http.StatusOK, nil, nil, nil
 }
