@@ -1,0 +1,48 @@
+package builds
+
+import (
+	"log"
+
+	"code.google.com/p/go-uuid/uuid"
+	"github.com/bmorton/builder/streams"
+)
+
+type Queue struct {
+	queue   chan *Build
+	builds  *Repository
+	builder *Builder
+}
+
+func NewQueue(repo *Repository, builder *Builder) *Queue {
+	return &Queue{
+		queue:   make(chan *Build, 100),
+		builds:  repo,
+		builder: builder,
+	}
+}
+
+func (q *Queue) Add(build *Build) string {
+	build.ID = uuid.New()
+	q.queue <- build
+	return build.ID
+}
+
+func (q *Queue) Run() {
+	for {
+		log.Println("Waiting for builds...")
+		build := <-q.queue
+
+		log.Printf("[%s] Starting job...\n", build.ID)
+		build.OutputStream = streams.NewOutput()
+		q.builds.Save(build.ID, build)
+
+		log.Printf("[%s] Building image...\n", build.ID)
+		q.builder.BuildImage(build)
+		log.Printf("[%s] Pushing image...\n", build.ID)
+		q.builder.PushImage(build)
+		log.Printf("[%s] Build complete!", build.ID)
+
+		build.OutputStream.Close()
+		q.builds.Destroy(build.ID)
+	}
+}

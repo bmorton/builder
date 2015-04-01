@@ -1,4 +1,4 @@
-package main
+package api
 
 type GithubPushEvent struct {
 	After   string      `json:"after"`

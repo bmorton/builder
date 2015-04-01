@@ -1,22 +1,27 @@
-package main
+package api
 
 import (
 	"net/http"
 
+	"github.com/bmorton/builder/builds"
 	"github.com/bmorton/flushwriter"
 	"github.com/gin-gonic/gin"
 )
 
 type BuildsResource struct {
-	builds *JobRepository
+	buildRepo *builds.Repository
+}
+
+func NewBuildsResource(buildRepo *builds.Repository) *BuildsResource {
+	return &BuildsResource{buildRepo: buildRepo}
 }
 
 func (br *BuildsResource) Show(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 	jobID := c.Params.ByName("id")
 
-	writer, ok := br.builds.Find(jobID)
-	if !ok || writer == nil {
+	build, ok := br.buildRepo.Find(jobID)
+	if !ok || build == nil {
 		c.String(http.StatusNotFound, "Not Found\n")
 		return
 	}
@@ -31,8 +36,8 @@ func (br *BuildsResource) Show(c *gin.Context) {
 
 	c.Writer.WriteHeader(http.StatusOK)
 	fw := flushwriter.New(c.Writer)
-	writer.Replay(&fw)
-	writer.Add(&fw, waitChan)
+	build.OutputStream.Replay(&fw)
+	build.OutputStream.Add(&fw, waitChan)
 	<-waitChan
-	writer.Remove(&fw)
+	build.OutputStream.Remove(&fw)
 }
