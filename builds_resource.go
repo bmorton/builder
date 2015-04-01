@@ -4,33 +4,33 @@ import (
 	"net/http"
 
 	"github.com/bmorton/flushwriter"
+	"github.com/gin-gonic/gin"
 )
 
 type BuildsResource struct {
 	builds *JobRepository
 }
 
-func (br *BuildsResource) Show(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-
-	jobID := r.URL.Query().Get("id")
+func (br *BuildsResource) Show(c *gin.Context) {
+	c.Writer.Header().Set("Content-Type", "text/plain")
+	jobID := c.Params.ByName("id")
 
 	writer, ok := br.builds.Find(jobID)
 	if !ok || writer == nil {
-		w.WriteHeader(http.StatusNotFound)
+		c.String(http.StatusNotFound, "Not Found\n")
 		return
 	}
 
 	waitChan := make(chan bool, 1)
-	notify := w.(http.CloseNotifier).CloseNotify()
+	notify := c.Writer.CloseNotify()
 
 	go func() {
 		<-notify
 		waitChan <- true
 	}()
 
-	w.WriteHeader(http.StatusOK)
-	fw := flushwriter.New(w)
+	c.Writer.WriteHeader(http.StatusOK)
+	fw := flushwriter.New(c.Writer)
 	writer.Replay(&fw)
 	writer.Add(&fw, waitChan)
 	<-waitChan
