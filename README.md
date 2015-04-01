@@ -2,6 +2,12 @@
 
 A conventional Docker image builder that simply accepts webhooks from any Github repository, builds an image for that repository, and pushes it to the supplied registry tagged with its git SHA using the same name as the repo.
 
+
+### Why wouldn't I just use Docker Hub or a build server like Jenkins?
+
+You totally can.  Those are both good options.  However, this project gives you the ability to easily build and push images to your own Docker registry by simply setting up a single Github webhook.  It allows you to easily set up lots of builds with zero configuration (or even for an entire organization in the latest version of Github Enterprise).
+
+
 ## Examples
 
 * Triggering a build
