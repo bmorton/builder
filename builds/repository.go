@@ -30,3 +30,12 @@ func (r *Repository) Keys() []string {
 	}
 	return keys
 }
+
+func (r *Repository) All() []*Build {
+	all := make([]*Build, 0, len(r.builds))
+	for _, build := range r.builds {
+		all = append(all, build)
+	}
+
+	return all
+}

@@ -42,6 +42,7 @@ func main() {
 	router.POST("/webhooks/github", webhookHandler.Github)
 
 	buildsResource := api.NewBuildsResource(repo)
+	router.GET("/builds", buildsResource.Index)
 	router.GET("/builds/:id", buildsResource.Show)
 
 	go buildQueue.Run()

@@ -16,6 +16,11 @@ func NewBuildsResource(buildRepo *builds.Repository) *BuildsResource {
 	return &BuildsResource{buildRepo: buildRepo}
 }
 
+func (br *BuildsResource) Index(c *gin.Context) {
+	builds := br.buildRepo.All()
+	c.JSON(http.StatusOK, builds)
+}
+
 func (br *BuildsResource) Show(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 	jobID := c.Params.ByName("id")
