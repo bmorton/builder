@@ -21,7 +21,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	githubHandler := &GithubHandler{dockerClient: client}
+	buildQueue := &BuildQueue{dockerClient: client, queue: make(chan *Build, 100)}
+	go buildQueue.Run()
+	githubHandler := &GithubHandler{queue: buildQueue}
 	mux.Handle("POST", "/webhooks/github", tigertonic.Marshaled(githubHandler.Webhook))
 
 	server := tigertonic.NewServer(":3000", tigertonic.ApacheLogged(mux))
