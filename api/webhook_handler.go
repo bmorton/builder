@@ -17,11 +17,19 @@ func NewWebhookHandler(queue *builds.Queue) *WebhookHandler {
 
 func (wh *WebhookHandler) Github(c *gin.Context) {
 	var event GithubPushEvent
+	var cloneURL string
 
 	c.Bind(&event)
+
+	if event.Repository.CloneURL != "" {
+		cloneURL = event.Repository.CloneURL
+	} else {
+		cloneURL = event.Repository.URL
+	}
+
 	build := &builds.Build{
 		RepositoryName: event.Repository.Name,
-		CloneURL:       event.Repository.CloneURL,
+		CloneURL:       cloneURL,
 		CommitID:       event.HeadCommit.ID,
 		GitRef:         event.Ref,
 	}
