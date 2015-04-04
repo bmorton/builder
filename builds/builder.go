@@ -13,14 +13,15 @@ import (
 type Builder struct {
 	registryURL  string
 	dockerClient *docker.Client
+	cachePath    string
 }
 
-func NewBuilder(registryURL string, dockerClient *docker.Client) *Builder {
-	return &Builder{registryURL: registryURL, dockerClient: dockerClient}
+func NewBuilder(registryURL string, dockerClient *docker.Client, cachePath string) *Builder {
+	return &Builder{registryURL: registryURL, dockerClient: dockerClient, cachePath: cachePath}
 }
 
 func (b *Builder) BuildImage(build *Build) {
-	repoPath := fmt.Sprintf("cache/%s", build.RepositoryName)
+	repoPath := fmt.Sprintf("%s/%s", b.cachePath, build.RepositoryName)
 	repo, err := findOrClone(repoPath, build.CloneURL)
 	handleError(err)
 

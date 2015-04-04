@@ -22,6 +22,7 @@ func main() {
 	var debugMode bool
 	var debugListen string
 	var registryURL string
+	var cachePath string
 
 	flag.StringVar(&listen, "listen", ":3000", "host:port to listen on")
 	flag.StringVar(&dockerHost, "docker-host", "", "address of Docker host")
@@ -30,12 +31,13 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "enable /debug endpoints on DEBUG_LISTEN")
 	flag.StringVar(&debugListen, "debug-listen", ":3001", "host:port to listen on for debug requests")
 	flag.StringVar(&registryURL, "registry-url", "192.168.59.103:5000", "host:port of the registry for pushing images")
+	flag.StringVar(&cachePath, "cache-path", "cache/", "path to the directory where cached repos will be stored")
 	flag.Parse()
 
 	router := gin.Default()
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
 	repo := builds.NewRepository()
-	builder := builds.NewBuilder(registryURL, client)
+	builder := builds.NewBuilder(registryURL, client, cachePath)
 	buildQueue := builds.NewQueue(repo, builder)
 
 	webhookHandler := api.NewWebhookHandler(buildQueue)
