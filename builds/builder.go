@@ -20,10 +20,12 @@ func NewBuilder(registryURL string, dockerClient *docker.Client, cachePath strin
 	return &Builder{registryURL: registryURL, dockerClient: dockerClient, cachePath: cachePath}
 }
 
-func (b *Builder) BuildImage(build *Build) {
+func (b *Builder) BuildImage(build *Build) error {
 	repoPath := fmt.Sprintf("%s/%s", b.cachePath, build.RepositoryName)
 	repo, err := findOrClone(repoPath, build.CloneURL)
-	handleError(err)
+	if err != nil {
+		return err
+	}
 
 	remote, err := repo.LookupRemote("origin")
 	handleError(err)
@@ -53,6 +55,8 @@ func (b *Builder) BuildImage(build *Build) {
 		InputStream:  context,
 	})
 	handleError(err)
+
+	return nil
 }
 
 func (b *Builder) PushImage(build *Build) {
@@ -68,7 +72,7 @@ func findOrClone(path string, cloneURL string) (*git.Repository, error) {
 	var repo *git.Repository
 	var err error
 
-	if _, err := os.Stat(path); err != nil {
+	if _, err = os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			repo, err = git.Clone(cloneURL, path, &git.CloneOptions{})
 		} else {

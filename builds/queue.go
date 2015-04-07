@@ -37,7 +37,15 @@ func (q *Queue) Run() {
 		q.builds.Save(build.ID, build)
 
 		log.Printf("[%s] Building image...\n", build.ID)
-		q.builder.BuildImage(build)
+		err := q.builder.BuildImage(build)
+		if err != nil {
+			log.Println(err)
+			log.Printf("[%s] Build failed!", build.ID)
+			build.OutputStream.Close()
+			q.builds.Destroy(build.ID)
+			return
+		}
+
 		log.Printf("[%s] Pushing image...\n", build.ID)
 		q.builder.PushImage(build)
 		log.Printf("[%s] Build complete!", build.ID)
