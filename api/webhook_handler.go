@@ -21,6 +21,11 @@ func (wh *WebhookHandler) Github(c *gin.Context) {
 
 	c.Bind(&event)
 
+	if event.Ref != "refs/heads/master" {
+		c.String(http.StatusBadRequest, "Only builds of the master branch are currently supported.\n")
+		return
+	}
+
 	if event.Repository.CloneURL != "" {
 		cloneURL = event.Repository.CloneURL
 	} else {
