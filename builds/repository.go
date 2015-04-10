@@ -20,7 +20,7 @@ func (r *Repository) Save(key string, build *Build) {
 }
 
 func (r *Repository) Destroy(key string) {
-	r.builds[key] = nil
+	delete(r.builds, key)
 }
 
 func (r *Repository) Keys() []string {
