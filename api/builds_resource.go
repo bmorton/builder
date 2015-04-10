@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/bmorton/builder/builds"
@@ -22,7 +23,6 @@ func (br *BuildsResource) Index(c *gin.Context) {
 }
 
 func (br *BuildsResource) Show(c *gin.Context) {
-	c.Writer.Header().Set("Content-Type", "text/plain")
 	jobID := c.Params.ByName("id")
 
 	build, ok := br.buildRepo.Find(jobID)
@@ -40,9 +40,20 @@ func (br *BuildsResource) Show(c *gin.Context) {
 	}()
 
 	c.Writer.WriteHeader(http.StatusOK)
-	fw := flushwriter.New(c.Writer)
-	build.OutputStream.Replay(&fw)
-	build.OutputStream.Add(&fw, waitChan)
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+
+	var w io.Writer
+	if c.Request.Header.Get("Accept") == "text/event-stream" {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		w = NewSSEWriter(c.Writer)
+	} else {
+		c.Writer.Header().Set("Content-Type", "text/plain")
+		w = flushwriter.New(c.Writer)
+	}
+
+	build.OutputStream.Replay(w)
+	build.OutputStream.Add(w, waitChan)
 	<-waitChan
-	build.OutputStream.Remove(&fw)
+	build.OutputStream.Remove(w)
 }
