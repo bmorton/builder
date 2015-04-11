@@ -30,6 +30,10 @@ func (br *BuildsResource) Create(c *gin.Context) {
 	build := &builds.Build{}
 
 	c.Bind(build)
+	if build.RepositoryName == "" {
+		build.SetDefaultName()
+	}
+
 	br.buildQueue.Add(build)
 
 	c.JSON(http.StatusOK, build)

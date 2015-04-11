@@ -1,9 +1,10 @@
 package api
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/bmorton/flushwriter"
 )
@@ -18,11 +19,27 @@ type SSEWriter struct {
 // Write prepends "data: " to every line of the byte slice, leaving an empty
 // line inbetween each data event.
 func (sw SSEWriter) Write(p []byte) (int, error) {
-	fixed := strings.Replace(string(p), "\n", "\n\ndata: ", -1)
-	event := fmt.Sprintf("data: %s\n\n", fixed)
-	return sw.writer.Write([]byte(event))
+	if isSkippable(p) {
+		return 0, nil
+	}
+
+	reader := bytes.NewReader(p)
+	scanner := bufio.NewScanner(reader)
+	var fixed string
+	for scanner.Scan() {
+		fixed = fmt.Sprintf("%sdata: %s\n\n", fixed, scanner.Text())
+	}
+	return sw.writer.Write([]byte(fixed))
 }
 
 func NewSSEWriter(w io.Writer) SSEWriter {
 	return SSEWriter{writer: flushwriter.New(w)}
+}
+
+func isSkippable(output []byte) bool {
+	s := string(output)
+	if s == "Buffering to disk\n" || s == "Pushing\n" {
+		return true
+	}
+	return false
 }
