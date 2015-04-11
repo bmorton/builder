@@ -1,1 +1,3 @@
 cache/
+static/bower_components/
+static/node_modules/

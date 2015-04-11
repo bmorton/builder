@@ -10,6 +10,7 @@ import (
 	"github.com/bmorton/builder/api"
 	"github.com/bmorton/builder/builds"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/namsral/flag"
 )
@@ -25,7 +26,7 @@ func main() {
 	var cachePath string
 
 	flag.StringVar(&listen, "listen", ":3000", "host:port to listen on")
-	flag.StringVar(&dockerHost, "docker-host", "", "address of Docker host")
+	flag.StringVar(&dockerHost, "docker-host", "unix:///var/run/docker.sock", "address of Docker host")
 	flag.BoolVar(&dockerTLSVerify, "docker-tls-verify", false, "use TLS client for Docker")
 	flag.StringVar(&dockerCertPath, "docker-cert-path", "", "path to the cert.pem, key.pem, and ca.pem for authenticating to Docker")
 	flag.BoolVar(&debugMode, "debug", false, "enable /debug endpoints on DEBUG_LISTEN")
@@ -35,6 +36,8 @@ func main() {
 	flag.Parse()
 
 	router := gin.Default()
+	router.Use(static.Serve("/", static.LocalFile("static", false)))
+
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
 	repo := builds.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)

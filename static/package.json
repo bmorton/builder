@@ -1,0 +1,8 @@
+{
+  "name": "builder",
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-wiredep": "^2.0.0"
+  }
+}
