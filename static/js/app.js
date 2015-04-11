@@ -2,7 +2,9 @@
   var app = angular.module('builderApp', [
     'ngRoute',
     'builderControllers',
-    'luegg.directives'
+    'builderDirectives',
+    'luegg.directives',
+    'ui.bootstrap'
   ]);
 
   app.config(['$routeProvider',

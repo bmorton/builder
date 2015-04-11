@@ -12,23 +12,7 @@
     <link rel="stylesheet" href="/css/app.css">
   </head>
   <body>
-    <nav class="navbar navbar-inverse navbar-static-top">
-      <div class="container">
-        <div class="navbar-header">
-          <a class="navbar-brand" href="#/builds">Docker Builder</a>
-        </div>
-
-        <ul class="nav navbar-nav">
-          <li class="active"><a href="#/builds">Builds</a></li>
-        </ul>
-
-        <div class="navbar-right">
-          <button type="button" class="btn btn-primary navbar-btn">
-            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-          </button>
-        </div>
-      </div>
-    </nav>
+    <navbar></navbar>
 
     <div ng-view></div>
     <!-- bower:js -->
@@ -37,8 +21,11 @@
     <script src="bower_components/angular-route/angular-route.js"></script>
     <script src="bower_components/angular-scroll-glue/src/scrollglue.js"></script>
     <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script src="bower_components/autofill-event/src/autofill-event.js"></script>
     <!-- endbower -->
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
+    <script src="js/directives.js"></script>
   </body>
 </html>
