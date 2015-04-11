@@ -40,6 +40,7 @@ func (q *Queue) Run() {
 		err := q.builder.BuildImage(build)
 		if err != nil {
 			log.Println(err)
+			build.OutputStream.Write([]byte(err.Error()))
 			log.Printf("[%s] Build failed!", build.ID)
 			build.OutputStream.Close()
 			q.builds.Destroy(build.ID)
