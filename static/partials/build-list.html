@@ -4,18 +4,16 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Repository</th>
-        <th>Commit ID</th>
-        <th>Git Ref</th>
+        <th class="col-md-2">Repository</th>
+        <th class="col-md-4">ID</th>
+        <th class="col-md-6">Target</th>
       </tr>
     </thead>
     <tbody>
       <tr ng-repeat="build in builds">
-        <td><a ng-href="#/builds/{{build.id}}">{{build.id}}</a></td>
         <td>{{build.repository_name}}</td>
-        <td>{{build.commit_id}}</td>
-        <td>{{build.git_ref}}</td>
+        <td><a ng-href="#/builds/{{build.id}}">{{build.id}}</a></td>
+        <td>{{build.commit_id}} ({{build.git_ref}})</td>
       </tr>
     </tbody>
   </table>

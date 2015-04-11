@@ -34,7 +34,6 @@ func (q *Queue) Run() {
 
 		log.Printf("[%s] Starting job...\n", build.ID)
 		build.OutputStream = streams.NewOutput()
-		q.builds.Save(build.ID, build)
 
 		log.Printf("[%s] Building image...\n", build.ID)
 		err := q.builder.BuildImage(build)

@@ -35,6 +35,7 @@ func (br *BuildsResource) Create(c *gin.Context) {
 	}
 
 	br.buildQueue.Add(build)
+	br.buildRepo.Save(build.ID, build)
 
 	c.JSON(http.StatusOK, build)
 }
