@@ -28,11 +28,28 @@ func (b *Builder) BuildImage(build *Build) error {
 	}
 
 	remote, err := repo.LookupRemote("origin")
-	handleError(err)
-	err = remote.Fetch([]string{build.GitRef}, nil, "")
-	handleError(err)
+	if err != nil {
+		return err
+	}
+
+	var refSpecs []string
+	if build.GitRef == "" {
+		refSpecs, err = remote.FetchRefspecs()
+		handleError(err)
+	} else {
+		refSpecs = []string{build.GitRef}
+	}
+
+	err = remote.Fetch(refSpecs, nil, "")
+	if err != nil {
+		return err
+	}
+
 	oid, err := git.NewOid(build.CommitID)
-	handleError(err)
+	if err != nil {
+		return err
+	}
+
 	commit, err := repo.LookupCommit(oid)
 	handleError(err)
 	tree, err := commit.Tree()
@@ -42,6 +59,7 @@ func (b *Builder) BuildImage(build *Build) error {
 	err = repo.SetHeadDetached(oid, nil, "")
 	handleError(err)
 
+	build.ImageTag = build.CommitID[:7]
 	options := &archive.TarOptions{
 		Compression:     archive.Uncompressed,
 		ExcludePatterns: []string{".git"},
@@ -50,19 +68,18 @@ func (b *Builder) BuildImage(build *Build) error {
 	context, err := archive.TarWithOptions(repoPath, options)
 	err = b.dockerClient.BuildImage(docker.BuildImageOptions{
 		Dockerfile:   "Dockerfile",
-		Name:         fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.CommitID[:7]),
+		Name:         fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.ImageTag),
 		OutputStream: build.OutputStream,
 		InputStream:  context,
 	})
-	handleError(err)
 
-	return nil
+	return err
 }
 
 func (b *Builder) PushImage(build *Build) {
 	err := b.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
-		Tag:          build.CommitID[:7],
+		Tag:          build.ImageTag,
 		OutputStream: build.OutputStream,
 	}, docker.AuthConfiguration{})
 	handleError(err)
