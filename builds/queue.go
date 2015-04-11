@@ -43,7 +43,7 @@ func (q *Queue) Run() {
 			log.Printf("[%s] Build failed!", build.ID)
 			build.OutputStream.Close()
 			q.builds.Destroy(build.ID)
-			return
+			continue
 		}
 
 		log.Printf("[%s] Pushing image...\n", build.ID)

@@ -10,16 +10,29 @@ import (
 )
 
 type BuildsResource struct {
-	buildRepo *builds.Repository
+	buildRepo  *builds.Repository
+	buildQueue *builds.Queue
 }
 
-func NewBuildsResource(buildRepo *builds.Repository) *BuildsResource {
-	return &BuildsResource{buildRepo: buildRepo}
+func NewBuildsResource(buildRepo *builds.Repository, buildQueue *builds.Queue) *BuildsResource {
+	return &BuildsResource{
+		buildRepo:  buildRepo,
+		buildQueue: buildQueue,
+	}
 }
 
 func (br *BuildsResource) Index(c *gin.Context) {
 	builds := br.buildRepo.All()
 	c.JSON(http.StatusOK, builds)
+}
+
+func (br *BuildsResource) Create(c *gin.Context) {
+	build := &builds.Build{}
+
+	c.Bind(build)
+	br.buildQueue.Add(build)
+
+	c.JSON(http.StatusOK, build)
 }
 
 func (br *BuildsResource) Show(c *gin.Context) {
