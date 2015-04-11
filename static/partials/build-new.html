@@ -4,10 +4,6 @@
 <form ng-submit="submit()">
   <div class="modal-body">
     <div class="form-group">
-      <label for="repositoryName">Repository Name</label>
-      <input type="text" class="form-control" ng-model="repositoryName" id="repositoryName" placeholder="deployster">
-    </div>
-    <div class="form-group">
       <label for="cloneURL">Clone URL</label>
       <input type="text" class="form-control" ng-model="cloneURL" id="cloneURL" placeholder="https://github.com/bmorton/deployster">
     </div>
@@ -15,13 +11,9 @@
       <label for="commitID">Commit ID</label>
       <input type="text" class="form-control" ng-model="commitID" id="commitID" placeholder="9476e42289a027bc26732a599ffea2c3d8507829">
     </div>
-    <div class="form-group">
-      <label for="gitRef">Git Ref</label>
-      <input type="text" class="form-control" ng-model="gitRef" id="gitRef" placeholder="refs/heads/master">
-    </div>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-primary" ng-click="submit()">OK</button>
-    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary">OK</button>
+    <button type="button" class="btn btn-warning" ng-click="cancel()">Cancel</button>
   </div>
 </form>

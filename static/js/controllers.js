@@ -1,18 +1,17 @@
 (function(){
   var builderControllers = angular.module('builderControllers', []);
 
-  builderControllers.controller('BuildModalCtrl', [ '$scope', '$http', '$modalInstance',
-    function($scope, $http, $modalInstance){
+  builderControllers.controller('BuildModalCtrl', [ '$scope', '$http', '$modalInstance', '$location',
+    function($scope, $http, $modalInstance, $location){
 
       $scope.submit = function() {
         build = {
-          "repository_name":$scope.repositoryName,
           "clone_url":$scope.cloneURL,
-          "commit_id":$scope.commitID,
-          "git_ref":$scope.gitRef
+          "commit_id":$scope.commitID
         }
-        console.log(build)
+
         $http.post('http://localhost:3000/builds', build).success(function(data){
+          $location.path("/builds/"+data.id);
           $modalInstance.close();
         });
       };

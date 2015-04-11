@@ -1,4 +1,4 @@
-#build-data {
-  height: 600px;
-  overflow: scroll;
+#build-results {
+  max-height: 600px;
+  overflow: auto;
 }
