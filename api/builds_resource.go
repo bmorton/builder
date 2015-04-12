@@ -9,12 +9,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BuildsResource struct {
-	buildRepo  *builds.Repository
-	buildQueue *builds.Queue
+type BuildRepository interface {
+	All() []*builds.Build
+	Save(string, *builds.Build)
+	Find(string) (*builds.Build, bool)
 }
 
-func NewBuildsResource(buildRepo *builds.Repository, buildQueue *builds.Queue) *BuildsResource {
+type BuildQueue interface {
+	Add(*builds.Build) string
+}
+
+type BuildsResource struct {
+	buildRepo  BuildRepository
+	buildQueue BuildQueue
+}
+
+func NewBuildsResource(buildRepo BuildRepository, buildQueue BuildQueue) *BuildsResource {
 	return &BuildsResource{
 		buildRepo:  buildRepo,
 		buildQueue: buildQueue,
@@ -37,7 +47,7 @@ func (br *BuildsResource) Create(c *gin.Context) {
 	br.buildQueue.Add(build)
 	br.buildRepo.Save(build.ID, build)
 
-	c.JSON(http.StatusOK, build)
+	c.JSON(http.StatusCreated, build)
 }
 
 func (br *BuildsResource) Show(c *gin.Context) {
