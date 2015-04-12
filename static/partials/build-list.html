@@ -6,7 +6,8 @@
       <tr>
         <th class="col-md-2">Repository</th>
         <th class="col-md-4">ID</th>
-        <th class="col-md-6">Target</th>
+        <th class="col-md-5">Target</th>
+        <th class="col-md-1">State</th>
       </tr>
     </thead>
     <tbody>
@@ -14,6 +15,7 @@
         <td>{{build.repository_name}}</td>
         <td><a ng-href="#/builds/{{build.id}}">{{build.id}}</a></td>
         <td>{{build.commit_id}} ({{build.git_ref}})</td>
+        <td><span class="label label-default">{{build.state}}</span></td>
       </tr>
     </tbody>
   </table>
