@@ -34,6 +34,7 @@ func (q *Queue) Run() {
 
 		log.Printf("[%s] Starting job...\n", build.ID)
 		build.OutputStream = streams.NewOutput()
+		build.State = Building
 
 		log.Printf("[%s] Building image...\n", build.ID)
 		err := q.builder.BuildImage(build)
@@ -42,12 +43,14 @@ func (q *Queue) Run() {
 			build.OutputStream.Write([]byte(err.Error()))
 			log.Printf("[%s] Build failed!", build.ID)
 			build.OutputStream.Close()
-			q.builds.Destroy(build.ID)
+			build.State = Failed
 			continue
 		}
 
 		log.Printf("[%s] Pushing image...\n", build.ID)
+		build.State = Pushing
 		q.builder.PushImage(build)
+		build.State = Complete
 		log.Printf("[%s] Build complete!", build.ID)
 
 		build.OutputStream.Close()

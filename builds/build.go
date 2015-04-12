@@ -14,6 +14,7 @@ type Build struct {
 	CommitID       string          `json:"commit_id"`
 	GitRef         string          `json:"git_ref"`
 	ImageTag       string          `json:"image_tag"`
+	State          State           `json:"state"`
 	OutputStream   *streams.Output `json:"-"`
 }
 
@@ -23,6 +24,7 @@ func New(name, cloneURL, commitID, gitRef string) *Build {
 		CloneURL:       cloneURL,
 		CommitID:       commitID,
 		GitRef:         gitRef,
+		State:          Waiting,
 	}
 }
 
@@ -32,4 +34,18 @@ func (b *Build) SetDefaultName() {
 		return
 	}
 	b.RepositoryName = path.Base(parsed.Path)
+}
+
+type State int
+
+const (
+	Waiting State = iota
+	Building
+	Pushing
+	Complete
+	Failed
+)
+
+func (s State) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
 }
