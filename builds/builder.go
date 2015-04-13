@@ -10,17 +10,17 @@ import (
 	"gopkg.in/libgit2/git2go.v22"
 )
 
-type Builder struct {
+type DockerBuilder struct {
 	registryURL  string
 	dockerClient *docker.Client
 	cachePath    string
 }
 
-func NewBuilder(registryURL string, dockerClient *docker.Client, cachePath string) *Builder {
-	return &Builder{registryURL: registryURL, dockerClient: dockerClient, cachePath: cachePath}
+func NewBuilder(registryURL string, dockerClient *docker.Client, cachePath string) *DockerBuilder {
+	return &DockerBuilder{registryURL: registryURL, dockerClient: dockerClient, cachePath: cachePath}
 }
 
-func (b *Builder) BuildImage(build *Build) error {
+func (b *DockerBuilder) BuildImage(build *Build) error {
 	repoPath := fmt.Sprintf("%s/%s", b.cachePath, build.RepositoryName)
 	repo, err := findOrClone(repoPath, build.CloneURL)
 	if err != nil {
@@ -76,7 +76,7 @@ func (b *Builder) BuildImage(build *Build) error {
 	return err
 }
 
-func (b *Builder) PushImage(build *Build) {
+func (b *DockerBuilder) PushImage(build *Build) {
 	err := b.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
 		Tag:          build.ImageTag,
