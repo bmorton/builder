@@ -63,5 +63,4 @@ func (q *Queue) PerformTask(build *Build) {
 	log.Printf("[%s] Build complete!", build.ID)
 
 	build.OutputStream.Close()
-	q.builds.Destroy(build.ID)
 }

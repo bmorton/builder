@@ -76,13 +76,12 @@ func (b *DockerBuilder) BuildImage(build *Build) error {
 	return err
 }
 
-func (b *DockerBuilder) PushImage(build *Build) {
-	err := b.dockerClient.PushImage(docker.PushImageOptions{
+func (b *DockerBuilder) PushImage(build *Build) error {
+	return b.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
 		Tag:          build.ImageTag,
 		OutputStream: build.OutputStream,
 	}, docker.AuthConfiguration{})
-	handleError(err)
 }
 
 func findOrClone(path string, cloneURL string) (*git.Repository, error) {
