@@ -69,7 +69,7 @@ func (b *DockerBuilder) BuildImage(build *Build) error {
 	err = b.dockerClient.BuildImage(docker.BuildImageOptions{
 		Dockerfile:   "Dockerfile",
 		Name:         fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.ImageTag),
-		OutputStream: build.OutputStream,
+		OutputStream: build.BuildStream,
 		InputStream:  context,
 	})
 
@@ -80,7 +80,7 @@ func (b *DockerBuilder) PushImage(build *Build) error {
 	return b.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
 		Tag:          build.ImageTag,
-		OutputStream: build.OutputStream,
+		OutputStream: build.PushStream,
 	}, docker.AuthConfiguration{})
 }
 

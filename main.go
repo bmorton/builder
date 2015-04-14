@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	_ "expvar"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/namsral/flag"
 )
 
@@ -39,7 +41,12 @@ func main() {
 	router.Use(static.Serve("/", static.LocalFile("static", false)))
 
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
-	repo := builds.NewRepository()
+	db, err := sql.Open("sqlite3", "db/builder.db")
+	if err != nil {
+		panic(err)
+	}
+	repo := builds.NewRepository("sqlite3", db)
+	repo.Migrate()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
 	buildQueue := builds.NewQueue(repo, builder)
 
@@ -48,8 +55,12 @@ func main() {
 
 	buildsResource := api.NewBuildsResource(repo, buildQueue)
 	router.GET("/builds", buildsResource.Index)
-	router.GET("/builds/:id", buildsResource.Show)
 	router.POST("/builds", buildsResource.Create)
+	router.GET("/builds/:id", buildsResource.Show)
+
+	streamsResource := api.NewStreamsResource(repo)
+	router.GET("/builds/:id/streams/build", streamsResource.Build)
+	router.GET("/builds/:id/streams/push", streamsResource.Push)
 
 	go buildQueue.Run()
 

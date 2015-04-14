@@ -4,8 +4,6 @@ import (
 	"log"
 
 	"github.com/bmorton/builder/streams"
-
-	"code.google.com/p/go-uuid/uuid"
 )
 
 type Builder interface {
@@ -28,7 +26,6 @@ func NewQueue(repo *Repository, builder Builder) *Queue {
 }
 
 func (q *Queue) Add(build *Build) string {
-	build.ID = uuid.New()
 	q.queue <- build
 	return build.ID
 }
@@ -42,25 +39,34 @@ func (q *Queue) Run() {
 
 func (q *Queue) PerformTask(build *Build) {
 	log.Printf("[%s] Starting job...\n", build.ID)
-	build.OutputStream = streams.NewOutput()
+	build.BuildStream = streams.NewOutput()
+	build.PushStream = streams.NewOutput()
 	build.State = Building
+	q.builds.Save(build)
 
 	log.Printf("[%s] Building image...\n", build.ID)
 	err := q.builder.BuildImage(build)
 	if err != nil {
 		log.Println(err)
-		build.OutputStream.Write([]byte(err.Error()))
+		build.BuildStream.Write([]byte(err.Error()))
 		log.Printf("[%s] Build failed!", build.ID)
-		build.OutputStream.Close()
 		build.State = Failed
+		q.builds.Save(build)
+		q.builds.PersistStreams(build.ID)
+		build.BuildStream.Close()
+		build.PushStream.Close()
 		return
 	}
 
 	log.Printf("[%s] Pushing image...\n", build.ID)
 	build.State = Pushing
+	q.builds.Save(build)
 	q.builder.PushImage(build)
 	build.State = Complete
+	q.builds.Save(build)
+	q.builds.PersistStreams(build.ID)
 	log.Printf("[%s] Build complete!", build.ID)
 
-	build.OutputStream.Close()
+	build.BuildStream.Close()
+	build.PushStream.Close()
 }

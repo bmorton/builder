@@ -3,6 +3,7 @@ package builds
 import (
 	"testing"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +23,7 @@ func (m *mockBuilder) PushImage(b *Build) error {
 }
 
 func TestQueueAdd(t *testing.T) {
-	repo := NewRepository()
+	repo := repository()
 	builder := &mockBuilder{}
 	q := NewQueue(repo, builder)
 
@@ -33,7 +34,7 @@ func TestQueueAdd(t *testing.T) {
 }
 
 func TestQueueSingleRun(t *testing.T) {
-	repo := NewRepository()
+	repo := repository()
 	builder := &mockBuilder{}
 	q := NewQueue(repo, builder)
 

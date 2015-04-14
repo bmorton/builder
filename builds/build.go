@@ -3,6 +3,7 @@ package builds
 import (
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/bmorton/builder/streams"
 )
@@ -15,7 +16,24 @@ type Build struct {
 	GitRef         string          `json:"git_ref"`
 	ImageTag       string          `json:"image_tag"`
 	State          State           `json:"state"`
-	OutputStream   *streams.Output `json:"-"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	BuildStream    *streams.Output `json:"-", sql:"-"`
+	PushStream     *streams.Output `json:"-", sql:"-"`
+}
+
+type BuildLog struct {
+	ID        string    `json:"id"`
+	Data      string    `json:"data" sql:"type:blob"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type PushLog struct {
+	ID        string    `json:"id"`
+	Data      string    `json:"data" sql:"type:blob"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func New(name, cloneURL, commitID, gitRef string) *Build {
@@ -34,6 +52,17 @@ func (b *Build) SetDefaultName() {
 		return
 	}
 	b.RepositoryName = path.Base(parsed.Path)
+}
+
+func (b *Build) IsFinished() bool {
+	switch b.State {
+	case Complete:
+		return true
+	case Failed:
+		return true
+	default:
+		return false
+	}
 }
 
 type State int

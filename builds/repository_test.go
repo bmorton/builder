@@ -1,46 +1,33 @@
 package builds
 
 import (
+	"database/sql"
 	"testing"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRepositorySaveFind(t *testing.T) {
-	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
-	r := NewRepository()
-	r.Save("123", expected)
-
-	actual, ok := r.Find("123")
-	assert.True(t, ok)
-	assert.Equal(t, expected, actual)
+func repository() *Repository {
+	db, _ := sql.Open("sqlite3", ":memory:")
+	repo := NewRepository("sqlite3", db)
+	repo.Migrate()
+	return repo
 }
 
-func TestRepositoryDestroy(t *testing.T) {
+func TestRepositoryCreateFind(t *testing.T) {
 	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
-	r := NewRepository()
-	r.Save("123", expected)
+	r := repository()
+	r.Create(expected)
 
-	_, ok := r.Find("123")
-	assert.True(t, ok)
-
-	r.Destroy("123")
-	_, ok = r.Find("123")
-	assert.False(t, ok)
-}
-
-func TestRepositoryKeys(t *testing.T) {
-	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
-	r := NewRepository()
-	r.Save("123", expected)
-
-	assert.Equal(t, []string{"123"}, r.Keys())
+	actual := r.Find(expected.ID)
+	assert.Equal(t, expected.ID, actual.ID)
 }
 
 func TestRepositoryAll(t *testing.T) {
 	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
-	r := NewRepository()
-	r.Save("123", expected)
+	r := repository()
+	r.Create(expected)
 
-	assert.Equal(t, []*Build{expected}, r.All())
+	assert.Equal(t, expected.ID, r.All()[0].ID)
 }

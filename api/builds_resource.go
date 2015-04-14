@@ -1,18 +1,17 @@
 package api
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/bmorton/builder/builds"
-	"github.com/bmorton/flushwriter"
 	"github.com/gin-gonic/gin"
 )
 
 type BuildRepository interface {
 	All() []*builds.Build
-	Save(string, *builds.Build)
-	Find(string) (*builds.Build, bool)
+	Create(*builds.Build)
+	Save(*builds.Build)
+	Find(string) *builds.Build
 }
 
 type BuildQueue interface {
@@ -44,44 +43,15 @@ func (br *BuildsResource) Create(c *gin.Context) {
 		build.SetDefaultName()
 	}
 
+	br.buildRepo.Create(build)
 	br.buildQueue.Add(build)
-	br.buildRepo.Save(build.ID, build)
 
 	c.JSON(http.StatusCreated, build)
 }
 
 func (br *BuildsResource) Show(c *gin.Context) {
-	jobID := c.Params.ByName("id")
+	buildID := c.Params.ByName("id")
+	build := br.buildRepo.Find(buildID)
 
-	build, ok := br.buildRepo.Find(jobID)
-	if !ok || build == nil {
-		c.String(http.StatusNotFound, "Not Found\n")
-		return
-	}
-
-	waitChan := make(chan bool, 1)
-	notify := c.Writer.CloseNotify()
-
-	go func() {
-		<-notify
-		waitChan <- true
-	}()
-
-	c.Writer.WriteHeader(http.StatusOK)
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-
-	var w io.Writer
-	if c.Request.Header.Get("Accept") == "text/event-stream" {
-		c.Writer.Header().Set("Content-Type", "text/event-stream")
-		w = NewSSEWriter(c.Writer)
-	} else {
-		c.Writer.Header().Set("Content-Type", "text/plain")
-		w = flushwriter.New(c.Writer)
-	}
-
-	build.OutputStream.Replay(w)
-	build.OutputStream.Add(w, waitChan)
-	<-waitChan
-	build.OutputStream.Remove(w)
+	c.JSON(http.StatusOK, build)
 }
