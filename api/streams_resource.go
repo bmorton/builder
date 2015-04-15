@@ -20,7 +20,14 @@ func NewStreamsResource(buildRepo *builds.Repository) *StreamsResource {
 
 func (sr *StreamsResource) Build(c *gin.Context) {
 	buildID := c.Params.ByName("id")
-	build := sr.buildRepo.Find(buildID)
+	build, err := sr.buildRepo.Find(buildID)
+	if err == builds.ErrNotFound {
+		c.String(http.StatusNotFound, "")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 
 	waitChan := make(chan bool, 1)
 	notify := c.Writer.CloseNotify()
@@ -56,7 +63,14 @@ func (sr *StreamsResource) Build(c *gin.Context) {
 
 func (sr *StreamsResource) Push(c *gin.Context) {
 	buildID := c.Params.ByName("id")
-	build := sr.buildRepo.Find(buildID)
+	build, err := sr.buildRepo.Find(buildID)
+	if err == builds.ErrNotFound {
+		c.String(http.StatusNotFound, "")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 
 	waitChan := make(chan bool, 1)
 	notify := c.Writer.CloseNotify()

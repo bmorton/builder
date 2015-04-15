@@ -3,12 +3,15 @@ package builds
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/bmorton/builder/streams"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var ErrNotFound = errors.New("Build not found")
 
 type Repository struct {
 	buildStreams map[string]*streams.Output
@@ -25,12 +28,15 @@ func NewRepository(driver string, db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) Find(key string) *Build {
+func (r *Repository) Find(key string) (*Build, error) {
 	var build Build
-	r.db.First(&build, &Build{ID: key})
+	if r.db.First(&build, &Build{ID: key}).RecordNotFound() {
+		return &build, ErrNotFound
+	}
+
 	build.BuildStream = r.buildStreams[key]
 	build.PushStream = r.pushStreams[key]
-	return &build
+	return &build, nil
 }
 
 func (r *Repository) Create(build *Build) {
@@ -52,8 +58,12 @@ func (r *Repository) FindBuildLog(key string) *BuildLog {
 	return &log
 }
 
-func (r *Repository) PersistStreams(key string) {
-	build := r.Find(key)
+func (r *Repository) PersistStreams(key string) error {
+	build, err := r.Find(key)
+	if err != nil {
+		return err
+	}
+
 	log := new(bytes.Buffer)
 	build.BuildStream.Replay(log)
 	buildLog := &BuildLog{
@@ -69,6 +79,7 @@ func (r *Repository) PersistStreams(key string) {
 	}
 	r.db.Create(&buildLog)
 	r.db.Create(&pushLog)
+	return nil
 }
 
 func (r *Repository) DestroyStreams(key string) {

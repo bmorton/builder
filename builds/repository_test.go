@@ -20,8 +20,15 @@ func TestRepositoryCreateFind(t *testing.T) {
 	r := repository()
 	r.Create(expected)
 
-	actual := r.Find(expected.ID)
+	actual, err := r.Find(expected.ID)
+	assert.Nil(t, err)
 	assert.Equal(t, expected.ID, actual.ID)
+}
+
+func TestRepositoryFindNotFound(t *testing.T) {
+	r := repository()
+	_, err := r.Find("abc123")
+	assert.Equal(t, ErrNotFound, err)
 }
 
 func TestRepositoryAll(t *testing.T) {

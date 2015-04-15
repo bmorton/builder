@@ -11,7 +11,7 @@ type BuildRepository interface {
 	All() []*builds.Build
 	Create(*builds.Build)
 	Save(*builds.Build)
-	Find(string) *builds.Build
+	Find(string) (*builds.Build, error)
 }
 
 type BuildQueue interface {
@@ -51,7 +51,14 @@ func (br *BuildsResource) Create(c *gin.Context) {
 
 func (br *BuildsResource) Show(c *gin.Context) {
 	buildID := c.Params.ByName("id")
-	build := br.buildRepo.Find(buildID)
+	build, err := br.buildRepo.Find(buildID)
+	if err == builds.ErrNotFound {
+		c.String(http.StatusNotFound, "")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 
 	c.JSON(http.StatusOK, build)
 }
