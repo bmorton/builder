@@ -78,7 +78,7 @@ func (r *Repository) DestroyStreams(key string) {
 
 func (r *Repository) All() []*Build {
 	all := make([]*Build, 0)
-	r.db.Find(&all)
+	r.db.Order("created_at DESC").Find(&all)
 	return all
 }
 
