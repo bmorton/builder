@@ -48,5 +48,5 @@ func (r *Repository) All() []*Build {
 }
 
 func (r *Repository) Migrate() {
-	r.db.AutoMigrate(&Build{}, &BuildLog{}, &PushLog{})
+	r.db.AutoMigrate(&Build{})
 }

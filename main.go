@@ -48,9 +48,11 @@ func main() {
 	}
 	buildRepo := builds.NewRepository("sqlite3", db)
 	buildRepo.Migrate()
+	logRepo := builds.NewLogRepository("sqlite3", db)
+	logRepo.Migrate()
 	streamRepo := streams.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
-	buildQueue := builds.NewQueue(buildRepo, streamRepo, builder)
+	buildQueue := builds.NewQueue(buildRepo, streamRepo, logRepo, builder)
 
 	webhookHandler := api.NewWebhookHandler(buildQueue)
 	router.POST("/webhooks/github", webhookHandler.Github)
@@ -62,6 +64,9 @@ func main() {
 
 	streamsResource := api.NewStreamsResource(buildRepo, streamRepo)
 	router.GET("/builds/:id/streams/:type", streamsResource.Show)
+
+	logsResource := api.NewLogsResource(buildRepo, logRepo)
+	router.GET("/builds/:id/logs/:type", logsResource.Show)
 
 	go buildQueue.Run()
 

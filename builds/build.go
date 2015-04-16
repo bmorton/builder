@@ -18,20 +18,6 @@ type Build struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-type BuildLog struct {
-	ID        string    `json:"id"`
-	Data      string    `json:"data" sql:"type:blob"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type PushLog struct {
-	ID        string    `json:"id"`
-	Data      string    `json:"data" sql:"type:blob"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 func New(name, cloneURL, commitID, gitRef string) *Build {
 	return &Build{
 		RepositoryName: name,

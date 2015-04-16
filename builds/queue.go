@@ -15,14 +15,16 @@ type Queue struct {
 	queue   chan *Build
 	builds  *Repository
 	streams *streams.Repository
+	logs    *LogRepository
 	builder Builder
 }
 
-func NewQueue(buildRepo *Repository, streamRepo *streams.Repository, builder Builder) *Queue {
+func NewQueue(buildRepo *Repository, streamRepo *streams.Repository, logRepo *LogRepository, builder Builder) *Queue {
 	return &Queue{
 		queue:   make(chan *Build, 100),
 		builds:  buildRepo,
 		streams: streamRepo,
+		logs:    logRepo,
 		builder: builder,
 	}
 }
@@ -54,8 +56,9 @@ func (q *Queue) PerformTask(build *Build) {
 		log.Printf("[%s] Build failed!", build.ID)
 		build.State = Failed
 		q.builds.Save(build)
-		stream.BuildOutput.Close()
-		stream.PushOutput.Close()
+		stream.Close()
+		q.logs.CreateFromOutput(stream)
+		q.streams.Destroy(stream.BuildID)
 		return
 	}
 
@@ -67,6 +70,7 @@ func (q *Queue) PerformTask(build *Build) {
 	q.builds.Save(build)
 	log.Printf("[%s] Build complete!", build.ID)
 
-	stream.BuildOutput.Close()
-	stream.PushOutput.Close()
+	stream.Close()
+	q.logs.CreateFromOutput(stream)
+	q.streams.Destroy(stream.BuildID)
 }

@@ -26,3 +26,7 @@ func (r *Repository) Find(key string) (*BuildStream, error) {
 
 	return stream, nil
 }
+
+func (r *Repository) Destroy(key string) {
+	delete(r.streams, key)
+}

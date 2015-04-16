@@ -13,3 +13,8 @@ func NewBuildStream(buildID string) *BuildStream {
 		PushOutput:  NewOutput(),
 	}
 }
+
+func (b *BuildStream) Close() {
+	b.BuildOutput.Close()
+	b.PushOutput.Close()
+}
