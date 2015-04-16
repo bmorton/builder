@@ -27,6 +27,8 @@ func main() {
 	var debugListen string
 	var registryURL string
 	var cachePath string
+	var dsn string
+	var sqlAdapter string
 
 	flag.StringVar(&listen, "listen", ":3000", "host:port to listen on")
 	flag.StringVar(&dockerHost, "docker-host", "unix:///var/run/docker.sock", "address of Docker host")
@@ -36,19 +38,21 @@ func main() {
 	flag.StringVar(&debugListen, "debug-listen", ":3001", "host:port to listen on for debug requests")
 	flag.StringVar(&registryURL, "registry-url", "192.168.59.103:5000", "host:port of the registry for pushing images")
 	flag.StringVar(&cachePath, "cache-path", "cache/", "path to the directory where cached repos will be stored")
+	flag.StringVar(&dsn, "dsn", "file::memory:?cache=shared", "DSN string for connecting to the database")
+	flag.StringVar(&sqlAdapter, "sql-adapter", "sqlite3", "adapter to use for the DSN string (currently only supports sqlite3)")
 	flag.Parse()
 
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile("static", false)))
 
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
-	db, err := sql.Open("sqlite3", "db/builder.db")
+	db, err := sql.Open(sqlAdapter, dsn)
 	if err != nil {
 		panic(err)
 	}
-	buildRepo := builds.NewRepository("sqlite3", db)
+	buildRepo := builds.NewRepository(sqlAdapter, db)
 	buildRepo.Migrate()
-	logRepo := builds.NewLogRepository("sqlite3", db)
+	logRepo := builds.NewLogRepository(sqlAdapter, db)
 	logRepo.Migrate()
 	streamRepo := streams.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
