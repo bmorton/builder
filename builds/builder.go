@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/bmorton/builder/streams"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/fsouza/go-dockerclient"
 	"gopkg.in/libgit2/git2go.v22"
@@ -20,7 +21,7 @@ func NewBuilder(registryURL string, dockerClient *docker.Client, cachePath strin
 	return &DockerBuilder{registryURL: registryURL, dockerClient: dockerClient, cachePath: cachePath}
 }
 
-func (b *DockerBuilder) BuildImage(build *Build) error {
+func (b *DockerBuilder) BuildImage(build *Build, stream *streams.Output) error {
 	repoPath := fmt.Sprintf("%s/%s", b.cachePath, build.RepositoryName)
 	repo, err := findOrClone(repoPath, build.CloneURL)
 	if err != nil {
@@ -69,18 +70,18 @@ func (b *DockerBuilder) BuildImage(build *Build) error {
 	err = b.dockerClient.BuildImage(docker.BuildImageOptions{
 		Dockerfile:   "Dockerfile",
 		Name:         fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.ImageTag),
-		OutputStream: build.OutputStream,
+		OutputStream: stream,
 		InputStream:  context,
 	})
 
 	return err
 }
 
-func (b *DockerBuilder) PushImage(build *Build) error {
+func (b *DockerBuilder) PushImage(build *Build, stream *streams.Output) error {
 	return b.dockerClient.PushImage(docker.PushImageOptions{
 		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
 		Tag:          build.ImageTag,
-		OutputStream: build.OutputStream,
+		OutputStream: stream,
 	}, docker.AuthConfiguration{})
 }
 

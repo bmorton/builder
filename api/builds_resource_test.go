@@ -42,12 +42,10 @@ func TestCreate(t *testing.T) {
 	queue.On("Add", &builds.Build{
 		RepositoryName: "deployster",
 		CloneURL:       "https://github.com/bmorton/deployster",
-		State:          builds.Waiting,
 	}).Return("abc123")
-	repo.On("Save", "", &builds.Build{
+	repo.On("Create", &builds.Build{
 		RepositoryName: "deployster",
 		CloneURL:       "https://github.com/bmorton/deployster",
-		State:          builds.Waiting,
 	}).Return()
 
 	payload := `{"clone_url":"https://github.com/bmorton/deployster"}`
@@ -61,5 +59,36 @@ func TestCreate(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	queue.AssertExpectations(t)
+	repo.AssertExpectations(t)
+}
+
+func TestShow(t *testing.T) {
+	b, repo, _ := resourceWithMocks()
+	repo.On("Find", "abc123").Return(&builds.Build{ID: "abc123"}, nil)
+
+	req, _ := http.NewRequest("GET", "/builds/abc123", nil)
+	w := httptest.NewRecorder()
+
+	r := gin.New()
+	r.GET("/builds/:id", b.Show)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "abc123")
+	repo.AssertExpectations(t)
+}
+
+func TestShowNotFound(t *testing.T) {
+	b, repo, _ := resourceWithMocks()
+	repo.On("Find", "abc123").Return(&builds.Build{}, builds.ErrNotFound)
+
+	req, _ := http.NewRequest("GET", "/builds/abc123", nil)
+	w := httptest.NewRecorder()
+
+	r := gin.New()
+	r.GET("/builds/:id", b.Show)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 	repo.AssertExpectations(t)
 }

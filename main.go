@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	_ "expvar"
 	"fmt"
 	"log"
@@ -9,9 +10,11 @@ import (
 
 	"github.com/bmorton/builder/api"
 	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/streams"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/namsral/flag"
 )
 
@@ -39,17 +42,31 @@ func main() {
 	router.Use(static.Serve("/", static.LocalFile("static", false)))
 
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
-	repo := builds.NewRepository()
+	db, err := sql.Open("sqlite3", "db/builder.db")
+	if err != nil {
+		panic(err)
+	}
+	buildRepo := builds.NewRepository("sqlite3", db)
+	buildRepo.Migrate()
+	logRepo := builds.NewLogRepository("sqlite3", db)
+	logRepo.Migrate()
+	streamRepo := streams.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
-	buildQueue := builds.NewQueue(repo, builder)
+	buildQueue := builds.NewQueue(buildRepo, streamRepo, logRepo, builder)
 
 	webhookHandler := api.NewWebhookHandler(buildQueue)
 	router.POST("/webhooks/github", webhookHandler.Github)
 
-	buildsResource := api.NewBuildsResource(repo, buildQueue)
+	buildsResource := api.NewBuildsResource(buildRepo, buildQueue)
 	router.GET("/builds", buildsResource.Index)
-	router.GET("/builds/:id", buildsResource.Show)
 	router.POST("/builds", buildsResource.Create)
+	router.GET("/builds/:id", buildsResource.Show)
+
+	streamsResource := api.NewStreamsResource(buildRepo, streamRepo)
+	router.GET("/builds/:id/streams/:type", streamsResource.Show)
+
+	logsResource := api.NewLogsResource(buildRepo, logRepo)
+	router.GET("/builds/:id/logs/:type", logsResource.Show)
 
 	go buildQueue.Run()
 

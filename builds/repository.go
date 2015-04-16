@@ -1,41 +1,52 @@
 package builds
 
+import (
+	"database/sql"
+	"errors"
+
+	"code.google.com/p/go-uuid/uuid"
+	"github.com/jinzhu/gorm"
+	_ "github.com/mattn/go-sqlite3"
+)
+
+var ErrNotFound = errors.New("Build not found")
+
 type Repository struct {
-	builds map[string]*Build
+	db *gorm.DB
 }
 
-func NewRepository() *Repository {
+func NewRepository(driver string, db *sql.DB) *Repository {
+	gormDB, _ := gorm.Open(driver, db)
 	return &Repository{
-		builds: make(map[string]*Build),
+		db: &gormDB,
 	}
 }
 
-func (r *Repository) Find(key string) (*Build, bool) {
-	output, ok := r.builds[key]
-	return output, ok
-}
-
-func (r *Repository) Save(key string, build *Build) {
-	r.builds[key] = build
-}
-
-func (r *Repository) Destroy(key string) {
-	delete(r.builds, key)
-}
-
-func (r *Repository) Keys() []string {
-	keys := make([]string, 0, len(r.builds))
-	for k := range r.builds {
-		keys = append(keys, k)
+func (r *Repository) Find(key string) (*Build, error) {
+	var build Build
+	if r.db.First(&build, &Build{ID: key}).RecordNotFound() {
+		return &build, ErrNotFound
 	}
-	return keys
+	return &build, nil
+}
+
+func (r *Repository) Create(build *Build) {
+	temp := uuid.New()
+	build.ID = temp
+	r.db.Create(build)
+	build.ID = temp
+}
+
+func (r *Repository) Save(build *Build) {
+	r.db.Save(build)
 }
 
 func (r *Repository) All() []*Build {
-	all := make([]*Build, 0, len(r.builds))
-	for _, build := range r.builds {
-		all = append(all, build)
-	}
-
+	all := make([]*Build, 0)
+	r.db.Order("created_at DESC").Find(&all)
 	return all
+}
+
+func (r *Repository) Migrate() {
+	r.db.AutoMigrate(&Build{})
 }

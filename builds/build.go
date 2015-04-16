@@ -3,19 +3,19 @@ package builds
 import (
 	"net/url"
 	"path"
-
-	"github.com/bmorton/builder/streams"
+	"time"
 )
 
 type Build struct {
-	ID             string          `json:"id"`
-	RepositoryName string          `json:"repository_name"`
-	CloneURL       string          `json:"clone_url"`
-	CommitID       string          `json:"commit_id"`
-	GitRef         string          `json:"git_ref"`
-	ImageTag       string          `json:"image_tag"`
-	State          State           `json:"state"`
-	OutputStream   *streams.Output `json:"-"`
+	ID             string    `json:"id"`
+	RepositoryName string    `json:"repository_name"`
+	CloneURL       string    `json:"clone_url"`
+	CommitID       string    `json:"commit_id"`
+	GitRef         string    `json:"git_ref"`
+	ImageTag       string    `json:"image_tag"`
+	State          State     `json:"state"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 func New(name, cloneURL, commitID, gitRef string) *Build {

@@ -4,31 +4,45 @@ import (
 	"log"
 
 	"github.com/bmorton/builder/streams"
-
-	"code.google.com/p/go-uuid/uuid"
 )
 
 type Builder interface {
-	BuildImage(*Build) error
-	PushImage(*Build) error
+	BuildImage(*Build, *streams.Output) error
+	PushImage(*Build, *streams.Output) error
+}
+
+type BuildSaver interface {
+	Save(*Build)
+}
+
+type StreamCreateDestroyer interface {
+	Create(*streams.BuildStream)
+	Destroy(string)
+}
+
+type LogCreator interface {
+	CreateFromOutput(*streams.BuildStream) (*BuildLog, *BuildLog)
 }
 
 type Queue struct {
 	queue   chan *Build
-	builds  *Repository
+	builds  BuildSaver
+	streams StreamCreateDestroyer
+	logs    LogCreator
 	builder Builder
 }
 
-func NewQueue(repo *Repository, builder Builder) *Queue {
+func NewQueue(buildRepo BuildSaver, streamRepo StreamCreateDestroyer, logRepo LogCreator, builder Builder) *Queue {
 	return &Queue{
 		queue:   make(chan *Build, 100),
-		builds:  repo,
+		builds:  buildRepo,
+		streams: streamRepo,
+		logs:    logRepo,
 		builder: builder,
 	}
 }
 
 func (q *Queue) Add(build *Build) string {
-	build.ID = uuid.New()
 	q.queue <- build
 	return build.ID
 }
@@ -42,25 +56,34 @@ func (q *Queue) Run() {
 
 func (q *Queue) PerformTask(build *Build) {
 	log.Printf("[%s] Starting job...\n", build.ID)
-	build.OutputStream = streams.NewOutput()
+	stream := streams.NewBuildStream(build.ID)
+	q.streams.Create(stream)
 	build.State = Building
+	q.builds.Save(build)
 
 	log.Printf("[%s] Building image...\n", build.ID)
-	err := q.builder.BuildImage(build)
+	err := q.builder.BuildImage(build, stream.BuildOutput)
 	if err != nil {
 		log.Println(err)
-		build.OutputStream.Write([]byte(err.Error()))
+		stream.BuildOutput.Write([]byte(err.Error()))
 		log.Printf("[%s] Build failed!", build.ID)
-		build.OutputStream.Close()
 		build.State = Failed
+		q.builds.Save(build)
+		stream.Close()
+		q.logs.CreateFromOutput(stream)
+		q.streams.Destroy(stream.BuildID)
 		return
 	}
 
 	log.Printf("[%s] Pushing image...\n", build.ID)
 	build.State = Pushing
-	q.builder.PushImage(build)
+	q.builds.Save(build)
+	q.builder.PushImage(build, stream.PushOutput)
 	build.State = Complete
+	q.builds.Save(build)
 	log.Printf("[%s] Build complete!", build.ID)
 
-	build.OutputStream.Close()
+	stream.Close()
+	q.logs.CreateFromOutput(stream)
+	q.streams.Destroy(stream.BuildID)
 }

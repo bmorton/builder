@@ -46,20 +46,34 @@
     function($scope, $routeParams) {
       $scope.buildId = $routeParams.buildId;
       $scope.buildData = '';
+      $scope.pushData = '';
 
-      $scope.addData = function (msg) {
+      $scope.addStreamingData = function (msg) {
         $scope.$apply(function () { $scope.buildData = $scope.buildData + msg.data + "\n"; });
+      };
+      $scope.addStaticData = function (msg) {
+        $scope.$apply(function () { $scope.pushData = msg.data; });
       };
 
       $scope.listen = function () {
-        $scope.buildFeed = new EventSource('/builds/' + $scope.buildId);
-        $scope.buildFeed.addEventListener('message', $scope.addData, false);
+        $scope.buildFeed = new EventSource('/builds/' + $scope.buildId + '/streams/build');
+        $scope.buildFeed.addEventListener('message', $scope.addStreamingData, false);
+        $scope.buildFeed.addEventListener('error', function(e) {
+          $scope.buildFeed.close();
+        }, false);
+
+        $scope.pushFeed = new EventSource('/builds/' + $scope.buildId + '/streams/push');
+        $scope.pushFeed.addEventListener('message', $scope.addStaticData, false);
+        $scope.pushFeed.addEventListener('error', function(e) {
+          $scope.pushFeed.close();
+        }, false);
       };
 
       $scope.listen();
 
       $scope.$on("$destroy", function(){
         $scope.buildFeed.close();
+        $scope.pushFeed.close();
       });
     }]);
 
