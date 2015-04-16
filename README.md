@@ -8,6 +8,23 @@ A conventional Docker image builder that simply accepts webhooks from any Github
 You totally can.  Those are both good options.  However, this project gives you the ability to easily build and push images to your own Docker registry by simply setting up a single Github webhook.  It allows you to easily set up lots of builds with zero configuration (or even for an entire organization in the latest version of Github Enterprise).
 
 
+## Usage
+
+```ShellSession
+$ builder -help
+Usage of builder:
+  -cache-path="cache/": path to the directory where cached repos will be stored
+  -debug=false: enable /debug endpoints on DEBUG_LISTEN
+  -debug-listen=":3001": host:port to listen on for debug requests
+  -docker-cert-path="": path to the cert.pem, key.pem, and ca.pem for authenticating to Docker
+  -docker-host="unix:///var/run/docker.sock": address of Docker host
+  -docker-tls-verify=false: use TLS client for Docker
+  -dsn="file::memory:?cache=shared": DSN string for connecting to the database
+  -listen=":3000": host:port to listen on
+  -registry-url="192.168.59.103:5000": host:port of the registry for pushing images
+  -sql-adapter="sqlite3": adapter to use for the DSN string (currently only supports sqlite3)
+```
+
 ## Examples
 
 * Triggering a build
