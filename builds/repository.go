@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"code.google.com/p/go-uuid/uuid"
-	"github.com/bmorton/builder/streams"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -13,17 +12,13 @@ import (
 var ErrNotFound = errors.New("Build not found")
 
 type Repository struct {
-	buildStreams map[string]*streams.Output
-	pushStreams  map[string]*streams.Output
-	db           *gorm.DB
+	db *gorm.DB
 }
 
 func NewRepository(driver string, db *sql.DB) *Repository {
 	gormDB, _ := gorm.Open(driver, db)
 	return &Repository{
-		buildStreams: make(map[string]*streams.Output),
-		pushStreams:  make(map[string]*streams.Output),
-		db:           &gormDB,
+		db: &gormDB,
 	}
 }
 
@@ -44,17 +39,6 @@ func (r *Repository) Create(build *Build) {
 
 func (r *Repository) Save(build *Build) {
 	r.db.Save(build)
-}
-
-func (r *Repository) FindBuildLog(key string) *BuildLog {
-	var log BuildLog
-	r.db.First(&log, &BuildLog{ID: key})
-	return &log
-}
-
-func (r *Repository) DestroyStreams(key string) {
-	delete(r.buildStreams, key)
-	delete(r.pushStreams, key)
 }
 
 func (r *Repository) All() []*Build {
