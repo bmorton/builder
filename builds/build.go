@@ -36,17 +36,6 @@ func (b *Build) SetDefaultName() {
 	b.RepositoryName = path.Base(parsed.Path)
 }
 
-func (b *Build) IsFinished() bool {
-	switch b.State {
-	case Complete:
-		return true
-	case Failed:
-		return true
-	default:
-		return false
-	}
-}
-
 type State int
 
 const (

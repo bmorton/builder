@@ -11,15 +11,28 @@ type Builder interface {
 	PushImage(*Build, *streams.Output) error
 }
 
+type BuildSaver interface {
+	Save(*Build)
+}
+
+type StreamCreateDestroyer interface {
+	Create(*streams.BuildStream)
+	Destroy(string)
+}
+
+type LogCreator interface {
+	CreateFromOutput(*streams.BuildStream) (*BuildLog, *BuildLog)
+}
+
 type Queue struct {
 	queue   chan *Build
-	builds  *Repository
-	streams *streams.Repository
-	logs    *LogRepository
+	builds  BuildSaver
+	streams StreamCreateDestroyer
+	logs    LogCreator
 	builder Builder
 }
 
-func NewQueue(buildRepo *Repository, streamRepo *streams.Repository, logRepo *LogRepository, builder Builder) *Queue {
+func NewQueue(buildRepo BuildSaver, streamRepo StreamCreateDestroyer, logRepo LogCreator, builder Builder) *Queue {
 	return &Queue{
 		queue:   make(chan *Build, 100),
 		builds:  buildRepo,

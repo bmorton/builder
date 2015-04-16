@@ -3,8 +3,11 @@ package builds
 import (
 	"testing"
 
+	"github.com/bmorton/builder/builds/mocks"
+	"github.com/bmorton/builder/streams"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type mockBuilder struct {
@@ -12,21 +15,28 @@ type mockBuilder struct {
 	calledPush  bool
 }
 
-func (m *mockBuilder) BuildImage(b *Build) error {
+func (m *mockBuilder) BuildImage(b *Build, o *streams.Output) error {
 	m.calledBuild = true
 	return nil
 }
 
-func (m *mockBuilder) PushImage(b *Build) error {
+func (m *mockBuilder) PushImage(b *Build, o *streams.Output) error {
 	m.calledPush = true
 	return nil
 }
 
-func TestQueueAdd(t *testing.T) {
-	repo := repository()
+func queue() (BuildSaver, *mocks.StreamCreateDestroyer, LogCreator, *mockBuilder, *Queue) {
+	buildRepo := repository()
+	streamRepo := new(mocks.StreamCreateDestroyer)
+	logRepo := logRepository()
 	builder := &mockBuilder{}
-	q := NewQueue(repo, builder)
+	q := NewQueue(buildRepo, streamRepo, logRepo, builder)
 
+	return buildRepo, streamRepo, logRepo, builder, q
+}
+
+func TestQueueAdd(t *testing.T) {
+	_, _, _, _, q := queue()
 	build := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
 	q.Add(build)
 
@@ -34,9 +44,9 @@ func TestQueueAdd(t *testing.T) {
 }
 
 func TestQueueSingleRun(t *testing.T) {
-	repo := repository()
-	builder := &mockBuilder{}
-	q := NewQueue(repo, builder)
+	_, streamRepo, _, builder, q := queue()
+	streamRepo.On("Create", mock.Anything).Return(nil)
+	streamRepo.On("Destroy", "test").Return(nil)
 
 	build := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
 	build.ID = "test"
