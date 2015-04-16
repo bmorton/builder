@@ -10,6 +10,7 @@ import (
 
 	"github.com/bmorton/builder/api"
 	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/streams"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -45,22 +46,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	repo := builds.NewRepository("sqlite3", db)
-	repo.Migrate()
+	buildRepo := builds.NewRepository("sqlite3", db)
+	buildRepo.Migrate()
+	streamRepo := streams.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
-	buildQueue := builds.NewQueue(repo, builder)
+	buildQueue := builds.NewQueue(buildRepo, streamRepo, builder)
 
 	webhookHandler := api.NewWebhookHandler(buildQueue)
 	router.POST("/webhooks/github", webhookHandler.Github)
 
-	buildsResource := api.NewBuildsResource(repo, buildQueue)
+	buildsResource := api.NewBuildsResource(buildRepo, buildQueue)
 	router.GET("/builds", buildsResource.Index)
 	router.POST("/builds", buildsResource.Create)
 	router.GET("/builds/:id", buildsResource.Show)
 
-	streamsResource := api.NewStreamsResource(repo)
-	router.GET("/builds/:id/streams/build", streamsResource.Build)
-	router.GET("/builds/:id/streams/push", streamsResource.Push)
+	streamsResource := api.NewStreamsResource(buildRepo, streamRepo)
+	router.GET("/builds/:id/streams/:type", streamsResource.Show)
 
 	go buildQueue.Run()
 

@@ -1,25 +1,28 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/streams"
 	"github.com/bmorton/flushwriter"
 	"github.com/gin-gonic/gin"
 )
 
 type StreamsResource struct {
-	buildRepo *builds.Repository
+	buildRepo  *builds.Repository
+	streamRepo *streams.Repository
 }
 
-func NewStreamsResource(buildRepo *builds.Repository) *StreamsResource {
-	return &StreamsResource{buildRepo: buildRepo}
+func NewStreamsResource(buildRepo *builds.Repository, streamRepo *streams.Repository) *StreamsResource {
+	return &StreamsResource{buildRepo: buildRepo, streamRepo: streamRepo}
 }
 
-func (sr *StreamsResource) Build(c *gin.Context) {
+func (sr *StreamsResource) Show(c *gin.Context) {
 	buildID := c.Params.ByName("id")
+	streamType := c.Params.ByName("type")
+
 	build, err := sr.buildRepo.Find(buildID)
 	if err == builds.ErrNotFound {
 		c.String(http.StatusNotFound, "")
@@ -29,14 +32,26 @@ func (sr *StreamsResource) Build(c *gin.Context) {
 		return
 	}
 
-	waitChan := make(chan bool, 1)
-	notify := c.Writer.CloseNotify()
+	stream, err := sr.streamRepo.Find(build.ID)
+	if err == streams.ErrNotFound {
+		c.String(http.StatusNotFound, "")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 
-	go func() {
-		<-notify
-		waitChan <- true
-	}()
+	switch streamType {
+	case "build":
+		streamOutput(c, stream.BuildOutput, true)
+	case "push":
+		streamOutput(c, stream.PushOutput, false)
+	default:
+		c.String(http.StatusNotFound, "")
+	}
+}
 
+func streamOutput(c *gin.Context, output *streams.Output, replay bool) {
 	c.Writer.WriteHeader(http.StatusOK)
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -50,28 +65,6 @@ func (sr *StreamsResource) Build(c *gin.Context) {
 		w = flushwriter.New(c.Writer)
 	}
 
-	if build.IsFinished() {
-		log := sr.buildRepo.FindBuildLog(build.ID)
-		fmt.Fprint(w, log.Data)
-	} else {
-		build.BuildStream.Replay(w)
-		build.BuildStream.Add(w, waitChan)
-		<-waitChan
-		build.BuildStream.Remove(w)
-	}
-}
-
-func (sr *StreamsResource) Push(c *gin.Context) {
-	buildID := c.Params.ByName("id")
-	build, err := sr.buildRepo.Find(buildID)
-	if err == builds.ErrNotFound {
-		c.String(http.StatusNotFound, "")
-		return
-	} else if err != nil {
-		c.String(http.StatusInternalServerError, "")
-		return
-	}
-
 	waitChan := make(chan bool, 1)
 	notify := c.Writer.CloseNotify()
 
@@ -80,20 +73,10 @@ func (sr *StreamsResource) Push(c *gin.Context) {
 		waitChan <- true
 	}()
 
-	c.Writer.WriteHeader(http.StatusOK)
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-
-	var w io.Writer
-	if c.Request.Header.Get("Accept") == "text/event-stream" {
-		c.Writer.Header().Set("Content-Type", "text/event-stream")
-		w = NewSSEWriter(c.Writer)
-	} else {
-		c.Writer.Header().Set("Content-Type", "text/plain")
-		w = flushwriter.New(c.Writer)
+	if replay {
+		output.Replay(w)
 	}
-
-	build.PushStream.Add(w, waitChan)
+	output.Add(w, waitChan)
 	<-waitChan
-	build.PushStream.Remove(w)
+	output.Remove(w)
 }
