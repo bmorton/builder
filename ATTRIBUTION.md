@@ -1,4 +1,4 @@
-This product contains software (`streams` package) derived from software
+This product contains software (parts of `streams` package) derived from software
 developed by Docker, licensed under the Apache 2.0 license.  Those parts are
 copyright 2012-2015 Docker, Inc.  The license for that is as follows:
 
