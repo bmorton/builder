@@ -1,2 +1,4 @@
 .git
+builder
 cache/
+db/

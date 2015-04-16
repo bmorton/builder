@@ -10,7 +10,7 @@
           "commit_id":$scope.commitID
         }
 
-        $http.post('http://localhost:3000/builds', build).success(function(data){
+        $http.post('/builds', build).success(function(data){
           $location.path("/builds/"+data.id);
           $modalInstance.close();
         });
@@ -26,7 +26,7 @@
       $scope.builds = [];
 
       $scope.loadData = function(){
-        $http.get('http://localhost:3000/builds').success(function(data){
+        $http.get('/builds').success(function(data){
           $scope.builds = data;
         });
       };

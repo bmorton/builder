@@ -10,8 +10,11 @@ RUN cp -R /tmp/libgit2-0.22.2/build/* /usr/lib/
 ENV PKG_CONFIG_PATH /tmp/libgit2-0.22.2/build
 ENV C_INCLUDE_PATH /tmp/libgit2-0.22.2/include
 
-ADD . /go/src/github.com/bmorton/builder
+COPY . /go/src/github.com/bmorton/builder
 RUN cd /go/src/github.com/bmorton/builder && go get -v -d
 RUN go install github.com/bmorton/builder
+
+WORKDIR /go/src/github.com/bmorton/builder
+RUN mkdir /go/src/github.com/bmorton/builder/db
 CMD ["/go/bin/builder"]
 EXPOSE 3000
