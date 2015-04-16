@@ -7,17 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BuildRepository interface {
-	All() []*builds.Build
-	Create(*builds.Build)
-	Save(*builds.Build)
-	Find(string) (*builds.Build, error)
-}
-
-type BuildQueue interface {
-	Add(*builds.Build) string
-}
-
 type BuildsResource struct {
 	buildRepo  BuildRepository
 	buildQueue BuildQueue

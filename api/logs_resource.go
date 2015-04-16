@@ -4,16 +4,15 @@ import (
 	"net/http"
 
 	"github.com/bmorton/builder/builds"
-	"github.com/bmorton/builder/streams"
 	"github.com/gin-gonic/gin"
 )
 
 type LogsResource struct {
-	buildRepo *builds.Repository
-	logRepo   *builds.LogRepository
+	buildRepo BuildRepository
+	logRepo   BuildLogRepository
 }
 
-func NewLogsResource(buildRepo *builds.Repository, logRepo *builds.LogRepository) *LogsResource {
+func NewLogsResource(buildRepo BuildRepository, logRepo BuildLogRepository) *LogsResource {
 	return &LogsResource{buildRepo: buildRepo, logRepo: logRepo}
 }
 
@@ -31,11 +30,11 @@ func (r *LogsResource) Show(c *gin.Context) {
 	}
 
 	buildLog, err := r.logRepo.FindByBuildID(build.ID, logType)
-	if err == streams.ErrNotFound {
+	if err == builds.ErrNotFound {
 		c.String(http.StatusNotFound, "")
 		return
 	} else if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
