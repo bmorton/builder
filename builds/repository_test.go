@@ -16,7 +16,7 @@ func repository() *Repository {
 }
 
 func TestRepositoryCreateFind(t *testing.T) {
-	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
+	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123")
 	r := repository()
 	r.Create(expected)
 
@@ -32,7 +32,7 @@ func TestRepositoryFindNotFound(t *testing.T) {
 }
 
 func TestRepositoryAll(t *testing.T) {
-	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
+	expected := New("deployster", "https://github.com/bmorton/deployster", "abc123")
 	r := repository()
 	r.Create(expected)
 

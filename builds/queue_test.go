@@ -37,7 +37,7 @@ func queue() (BuildSaver, *mocks.StreamCreateDestroyer, LogCreator, *mockBuilder
 
 func TestQueueAdd(t *testing.T) {
 	_, _, _, _, q := queue()
-	build := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
+	build := New("deployster", "https://github.com/bmorton/deployster", "abc123")
 	q.Add(build)
 
 	assert.Equal(t, build, <-q.queue)
@@ -48,7 +48,7 @@ func TestQueueSingleRun(t *testing.T) {
 	streamRepo.On("Create", mock.Anything).Return(nil)
 	streamRepo.On("Destroy", "test").Return(nil)
 
-	build := New("deployster", "https://github.com/bmorton/deployster", "abc123", "refs/heads/master")
+	build := New("deployster", "https://github.com/bmorton/deployster", "abc123")
 	build.ID = "test"
 	q.PerformTask(build)
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestDefaultName(t *testing.T) {
-	b := New("", "https://github.com/bmorton/deployster", "", "")
+	b := New("", "https://github.com/bmorton/deployster", "")
 	b.SetDefaultName()
 	assert.Equal(t, "deployster", b.RepositoryName)
 }

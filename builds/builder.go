@@ -33,13 +33,8 @@ func (b *DockerBuilder) BuildImage(build *Build, stream *streams.Output) error {
 		return err
 	}
 
-	var refSpecs []string
-	if build.GitRef == "" {
-		refSpecs, err = remote.FetchRefspecs()
-		handleError(err)
-	} else {
-		refSpecs = []string{build.GitRef}
-	}
+	refSpecs, err := remote.FetchRefspecs()
+	handleError(err)
 
 	err = remote.Fetch(refSpecs, nil, "")
 	if err != nil {

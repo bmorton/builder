@@ -14,7 +14,7 @@
       <tr ng-repeat="build in builds">
         <td>{{build.repository_name}}</td>
         <td><a ng-href="#/builds/{{build.id}}">{{build.id}}</a></td>
-        <td>{{build.commit_id}} ({{build.git_ref}})</td>
+        <td>{{build.commit_id}}</td>
         <td><span class="label label-default">{{build.state}}</span></td>
       </tr>
     </tbody>

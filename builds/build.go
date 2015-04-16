@@ -11,19 +11,17 @@ type Build struct {
 	RepositoryName string    `json:"repository_name"`
 	CloneURL       string    `json:"clone_url"`
 	CommitID       string    `json:"commit_id"`
-	GitRef         string    `json:"git_ref"`
 	ImageTag       string    `json:"image_tag"`
 	State          State     `json:"state"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-func New(name, cloneURL, commitID, gitRef string) *Build {
+func New(name, cloneURL, commitID string) *Build {
 	return &Build{
 		RepositoryName: name,
 		CloneURL:       cloneURL,
 		CommitID:       commitID,
-		GitRef:         gitRef,
 		State:          Waiting,
 	}
 }

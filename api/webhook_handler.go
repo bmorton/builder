@@ -36,7 +36,6 @@ func (wh *WebhookHandler) Github(c *gin.Context) {
 		RepositoryName: event.Repository.Name,
 		CloneURL:       cloneURL,
 		CommitID:       event.HeadCommit.ID,
-		GitRef:         event.Ref,
 	}
 	wh.queue.Add(build)
 
