@@ -11,11 +11,11 @@ import (
 )
 
 type StreamsResource struct {
-	buildRepo  *builds.Repository
-	streamRepo *streams.Repository
+	buildRepo  BuildRepository
+	streamRepo StreamRepository
 }
 
-func NewStreamsResource(buildRepo *builds.Repository, streamRepo *streams.Repository) *StreamsResource {
+func NewStreamsResource(buildRepo BuildRepository, streamRepo StreamRepository) *StreamsResource {
 	return &StreamsResource{buildRepo: buildRepo, streamRepo: streamRepo}
 }
 

@@ -1,6 +1,9 @@
 package api
 
-import "github.com/bmorton/builder/builds"
+import (
+	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/streams"
+)
 
 type BuildRepository interface {
 	All() []*builds.Build
@@ -15,4 +18,8 @@ type BuildQueue interface {
 
 type BuildLogRepository interface {
 	FindByBuildID(string, string) (*builds.BuildLog, error)
+}
+
+type StreamRepository interface {
+	Find(string) (*streams.BuildStream, error)
 }
