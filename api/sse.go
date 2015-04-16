@@ -38,7 +38,7 @@ func NewSSEWriter(w io.Writer) SSEWriter {
 
 func isSkippable(output []byte) bool {
 	s := string(output)
-	if s == "Buffering to disk\n" || s == "Pushing\n" {
+	if s == "Buffering to disk\n" || s == "Pushing\n" || s == "Downloading\n" {
 		return true
 	}
 	return false
