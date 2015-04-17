@@ -58,7 +58,7 @@ func main() {
 	builder := builds.NewBuilder(registryURL, client, cachePath)
 	buildQueue := builds.NewQueue(buildRepo, streamRepo, logRepo, builder)
 
-	webhookHandler := api.NewWebhookHandler(buildQueue)
+	webhookHandler := api.NewWebhookHandler(buildRepo, buildQueue)
 	router.POST("/webhooks/github", webhookHandler.Github)
 
 	buildsResource := api.NewBuildsResource(buildRepo, buildQueue)
