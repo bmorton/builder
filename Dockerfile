@@ -12,9 +12,13 @@ ENV C_INCLUDE_PATH /tmp/libgit2-0.22.2/include
 
 COPY . /go/src/github.com/bmorton/builder
 RUN cd /go/src/github.com/bmorton/builder && go get -v -d
+RUN go build --ldflags '-extldflags "-static"'
 RUN go install github.com/bmorton/builder
 
-WORKDIR /go/src/github.com/bmorton/builder
-RUN mkdir /go/src/github.com/bmorton/builder/db
-CMD ["/go/bin/builder"]
-EXPOSE 3000
+RUN mkdir -p /dist/db
+WORKDIR /dist
+RUN cp /go/bin/builder .
+RUN cp -R /go/src/github.com/bmorton/builder/static ./static
+RUN cp /go/src/github.com/bmorton/builder/Dockerfile.run Dockerfile
+
+CMD tar -cf - .

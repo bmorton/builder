@@ -111,3 +111,10 @@ Usage of builder:
   Image successfully pushed
   Pushing tag for rev [626431e69f0d] on {http://192.168.59.103:5000/v1/repositories/hello-world/tags/96ac589}
   ```
+
+
+## Building
+
+```
+docker build -t builder-1 . && docker run builder-1 | docker build -t bmorton/builder -
+```

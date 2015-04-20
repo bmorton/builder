@@ -1,0 +1,5 @@
+FROM flynn/busybox
+
+ADD . /app
+EXPOSE 8080
+CMD ["/app/builder"]
