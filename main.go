@@ -43,6 +43,7 @@ func main() {
 	flag.Parse()
 
 	router := gin.Default()
+	router.StaticFile("/", "static/index.html")
 	router.Use(static.Serve("/", static.LocalFile("static", false)))
 
 	client := dockerClient(dockerHost, dockerTLSVerify, dockerCertPath)
