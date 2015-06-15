@@ -42,8 +42,8 @@
       });
     }]);
 
-  builderControllers.controller('BuildDetailCtrl', ['$scope', '$routeParams',
-    function($scope, $routeParams) {
+  builderControllers.controller('BuildDetailCtrl', ['$scope', '$routeParams', '$http',
+    function($scope, $routeParams, $http) {
       $scope.buildId = $routeParams.buildId;
       $scope.buildData = '';
       $scope.pushData = '';
@@ -60,12 +60,18 @@
         $scope.buildFeed.addEventListener('message', $scope.addStreamingData, false);
         $scope.buildFeed.addEventListener('error', function(e) {
           $scope.buildFeed.close();
+          $http.get('/builds/' + $scope.buildId + '/logs/build').success(function(data){
+            $scope.buildData = data;
+          });
         }, false);
 
         $scope.pushFeed = new EventSource('/builds/' + $scope.buildId + '/streams/push');
         $scope.pushFeed.addEventListener('message', $scope.addStaticData, false);
         $scope.pushFeed.addEventListener('error', function(e) {
           $scope.pushFeed.close();
+          $http.get('/builds/' + $scope.buildId + '/logs/push').success(function(data){
+            $scope.pushData = data;
+          });
         }, false);
       };
 
