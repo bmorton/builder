@@ -42,6 +42,7 @@ func main() {
 	flag.StringVar(&sqlAdapter, "sql-adapter", "sqlite3", "adapter to use for the DSN string (currently only supports sqlite3)")
 	flag.Parse()
 
+	gin.DisableBindValidation()
 	router := gin.Default()
 	router.StaticFile("/", "static/index.html")
 	router.Use(static.Serve("/", static.LocalFile("static", false)))
