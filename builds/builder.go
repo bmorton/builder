@@ -62,22 +62,47 @@ func (b *DockerBuilder) BuildImage(build *Build, stream *streams.Output) error {
 		IncludeFiles:    []string{"."},
 	}
 	context, err := archive.TarWithOptions(repoPath, options)
+	name := fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.ImageTag)
 	err = b.dockerClient.BuildImage(docker.BuildImageOptions{
 		Dockerfile:   "Dockerfile",
-		Name:         fmt.Sprintf("%s/%s:%s", b.registryURL, build.RepositoryName, build.ImageTag),
+		Name:         name,
 		OutputStream: stream,
 		InputStream:  context,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = b.dockerClient.TagImage(name, docker.TagImageOptions{
+		Repo: fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
+		Tag:  "latest",
 	})
 
 	return err
 }
 
 func (b *DockerBuilder) PushImage(build *Build, stream *streams.Output) error {
-	return b.dockerClient.PushImage(docker.PushImageOptions{
-		Name:         fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
+	name := fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName)
+
+	stream.Write([]byte(fmt.Sprintf("Pushing %s:%s...", name, build.ImageTag)))
+	err := b.dockerClient.PushImage(docker.PushImageOptions{
+		Name:         name,
 		Tag:          build.ImageTag,
 		OutputStream: stream,
 	}, docker.AuthConfiguration{})
+
+	if err != nil {
+		return err
+	}
+
+	stream.Write([]byte(fmt.Sprintf("Pushing %s:latest...", name)))
+	err = b.dockerClient.PushImage(docker.PushImageOptions{
+		Name:         name,
+		Tag:          "latest",
+		OutputStream: stream,
+	}, docker.AuthConfiguration{})
+
+	return err
 }
 
 func findOrClone(path string, cloneURL string) (*git.Repository, error) {
