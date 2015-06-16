@@ -74,8 +74,9 @@ func (b *DockerBuilder) BuildImage(build *Build, stream *streams.Output) error {
 	}
 
 	err = b.dockerClient.TagImage(name, docker.TagImageOptions{
-		Repo: fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
-		Tag:  "latest",
+		Repo:  fmt.Sprintf("%s/%s", b.registryURL, build.RepositoryName),
+		Tag:   "latest",
+		Force: true,
 	})
 
 	return err
