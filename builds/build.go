@@ -10,6 +10,7 @@ type Build struct {
 	ID             string    `json:"id"`
 	RepositoryName string    `json:"repository_name"`
 	CloneURL       string    `json:"clone_url"`
+	ProjectID      string    `json:"project_id" sql:"index"`
 	CommitID       string    `json:"commit_id"`
 	ImageTag       string    `json:"image_tag"`
 	State          State     `json:"state"`

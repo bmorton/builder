@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/projects"
 	"github.com/bmorton/builder/streams"
 )
 
@@ -22,4 +23,10 @@ type BuildLogRepository interface {
 
 type StreamRepository interface {
 	Find(string) (*streams.BuildStream, error)
+}
+
+type ProjectRepository interface {
+	All() []*projects.Project
+	Find(string) (*projects.Project, error)
+	FindOrCreateByCloneURL(string) *projects.Project
 }

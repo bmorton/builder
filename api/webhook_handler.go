@@ -8,12 +8,13 @@ import (
 )
 
 type WebhookHandler struct {
-	buildRepo BuildRepository
-	queue     BuildQueue
+	buildRepo   BuildRepository
+	projectRepo ProjectRepository
+	queue       BuildQueue
 }
 
-func NewWebhookHandler(buildRepo BuildRepository, queue BuildQueue) *WebhookHandler {
-	return &WebhookHandler{buildRepo: buildRepo, queue: queue}
+func NewWebhookHandler(buildRepo BuildRepository, projectRepo ProjectRepository, queue BuildQueue) *WebhookHandler {
+	return &WebhookHandler{buildRepo: buildRepo, projectRepo: projectRepo, queue: queue}
 }
 
 func (wh *WebhookHandler) Github(c *gin.Context) {
@@ -33,7 +34,10 @@ func (wh *WebhookHandler) Github(c *gin.Context) {
 		cloneURL = event.Repository.URL
 	}
 
+	project := wh.projectRepo.FindOrCreateByCloneURL(cloneURL)
 	build := builds.New(event.Repository.Name, cloneURL, event.HeadCommit.ID)
+	build.ProjectID = project.ID
+
 	wh.buildRepo.Create(build)
 	wh.queue.Add(build)
 

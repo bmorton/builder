@@ -10,6 +10,7 @@ import (
 
 	"github.com/bmorton/builder/api"
 	"github.com/bmorton/builder/builds"
+	"github.com/bmorton/builder/projects"
 	"github.com/bmorton/builder/streams"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gin-gonic/contrib/static"
@@ -54,13 +55,15 @@ func main() {
 	}
 	buildRepo := builds.NewRepository(sqlAdapter, db)
 	buildRepo.Migrate()
+	projectRepo := projects.NewRepository(sqlAdapter, db)
+	projectRepo.Migrate()
 	logRepo := builds.NewLogRepository(sqlAdapter, db)
 	logRepo.Migrate()
 	streamRepo := streams.NewRepository()
 	builder := builds.NewBuilder(registryURL, client, cachePath)
 	buildQueue := builds.NewQueue(buildRepo, streamRepo, logRepo, builder)
 
-	webhookHandler := api.NewWebhookHandler(buildRepo, buildQueue)
+	webhookHandler := api.NewWebhookHandler(buildRepo, projectRepo, buildQueue)
 	router.POST("/webhooks/github", webhookHandler.Github)
 
 	buildsResource := api.NewBuildsResource(buildRepo, buildQueue)
@@ -73,6 +76,10 @@ func main() {
 
 	logsResource := api.NewLogsResource(buildRepo, logRepo)
 	router.GET("/builds/:id/logs/:type", logsResource.Show)
+
+	projectsResource := api.NewProjectsResource(projectRepo)
+	router.GET("/projects", projectsResource.Index)
+	router.GET("/projects/:id", projectsResource.Show)
 
 	go buildQueue.Run()
 
